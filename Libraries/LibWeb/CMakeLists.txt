@@ -112,6 +112,27 @@ set(GENERATED_SOURCES
     ../../Services/ProtocolServer/ProtocolServerEndpoint.h
 )
 
+if(CMAKE_HOST_APPLE)
+
+add_custom_command(
+    OUTPUT CSS/PropertyID.h
+    COMMAND /bin/mkdir -p CSS
+    COMMAND ${BUILD_HOST_TOOLS_DIRECTORY}/Libraries/LibWeb/CodeGenerators/Generate_CSS_PropertyID_h ${CMAKE_CURRENT_SOURCE_DIR}/CSS/Properties.json > CSS/PropertyID.h
+    VERBATIM
+    MAIN_DEPENDENCY CSS/Properties.json
+)
+add_custom_target(generate_PropertyID.h DEPENDS CSS/PropertyID.h)
+
+add_custom_command(
+    OUTPUT CSS/PropertyID.cpp
+    COMMAND /bin/mkdir -p CSS
+    COMMAND ${BUILD_HOST_TOOLS_DIRECTORY}/Libraries/LibWeb/CodeGenerators/Generate_CSS_PropertyID_cpp ${CMAKE_CURRENT_SOURCE_DIR}/CSS/Properties.json > CSS/PropertyID.cpp
+    VERBATIM
+    MAIN_DEPENDENCY CSS/Properties.json
+)
+
+else()
+
 add_custom_command(
     OUTPUT CSS/PropertyID.h
     COMMAND /bin/mkdir -p CSS
@@ -130,6 +151,8 @@ add_custom_command(
     DEPENDS Generate_CSS_PropertyID_cpp
     MAIN_DEPENDENCY CSS/Properties.json
 )
+
+endif()
 
 add_custom_command(
     OUTPUT CSS/DefaultStyleSheetSource.cpp

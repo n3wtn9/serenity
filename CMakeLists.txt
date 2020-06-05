@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
+if (NOT BUILD_HOST_TOOLS AND CMAKE_HOST_APPLE)
+set(CMAKE_SYSTEM_NAME Generic)
+endif()
+
 project(SerenityOS C CXX ASM)
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -41,11 +45,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -std=c++2a -fdiagn
 include_directories(Libraries)
 include_directories(.)
 
+if (BUILD_HOST_TOOLS OR NOT CMAKE_HOST_APPLE)
+
 add_subdirectory(Meta/Lagom)
 add_subdirectory(DevTools/IPCCompiler)
 add_subdirectory(DevTools/FormCompiler)
 add_subdirectory(Libraries/LibWeb/CodeGenerators)
 add_subdirectory(AK/Tests)
+
+endif()
+
+if (NOT BUILD_HOST_TOOLS)
 
 function(serenity_install_headers target_name)
     file(GLOB_RECURSE headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
@@ -82,6 +92,22 @@ function(serenity_bin target_name)
     install(TARGETS ${target_name} RUNTIME DESTINATION bin)
 endfunction()
 
+if(CMAKE_HOST_APPLE)
+
+function(compile_ipc source output)
+    set(source ${CMAKE_CURRENT_SOURCE_DIR}/${source})
+    add_custom_command(
+        OUTPUT ${output}
+        COMMAND ${BUILD_HOST_TOOLS_DIRECTORY}/DevTools/IPCCompiler/IPCCompiler ${source} > ${output}
+        VERBATIM
+        MAIN_DEPENDENCY ${source}
+    )
+    get_filename_component(output_name ${output} NAME)
+    add_custom_target(generate_${output_name} DEPENDS ${output})
+endfunction()
+
+else()
+
 function(compile_ipc source output)
     set(source ${CMAKE_CURRENT_SOURCE_DIR}/${source})
     add_custom_command(
@@ -94,6 +120,8 @@ function(compile_ipc source output)
     get_filename_component(output_name ${output} NAME)
     add_custom_target(generate_${output_name} DEPENDS ${output})
 endfunction()
+
+endif()
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -139,3 +167,5 @@ add_subdirectory(MenuApplets)
 add_subdirectory(Shell)
 add_subdirectory(Demos)
 add_subdirectory(Userland)
+
+endif()
